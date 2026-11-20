@@ -12,3 +12,7 @@
 #bsl-panel button{flex:1;background:#1b2128;color:#dfe5ea;border:1px solid #333c45;border-radius:6px;padding:6px 0;
  font-size:12px;cursor:pointer}
 #bsl-panel button:hover{background:#232b34}
+
+#bsl-panel .grid{padding:0 12px}
+#bsl-panel .grid img{display:block;width:100%;border-radius:6px}
+#bsl-panel .grid:empty{display:none}
