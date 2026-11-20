@@ -14,7 +14,7 @@
     <div class="cue">点「抓本集」——字幕只在内存里，不落盘。</div>
     <div class="grid"></div>
     <div class="meta"></div>
-    <div class="bar"><button data-a="grab">抓本集</button><button data-a="grid">抽帧 9 张</button><button data-a="copy">复制全部</button><button data-a="close">收起</button></div>`;
+    <div class="bar"><button data-a="grab">抓本集</button><button data-a="grid">抽帧 9 张</button><button data-a="one">抽这一帧</button><button data-a="copy">复制全部</button><button data-a="close">收起</button></div>`;
   document.documentElement.appendChild(root);
 
   const dot = root.querySelector('.dot');
@@ -89,10 +89,36 @@
     setState('', `抽帧 ${times[0]}–${times[8]} 秒 · 只在内存里 · 存不存你定`);
   }
 
+  async function shootOne() {
+    const v = video();
+    if (!v) return setState('bad', '没找到播放器');
+    gridEl.innerHTML = ''; cueEl.style.display = 'none';
+    const w = Math.min(v.videoWidth || 1280, 1920), h = Math.round(w * (v.videoHeight || 720) / (v.videoWidth || 1280));
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const cx = cv.getContext('2d');
+    const t = v.currentTime;
+    if (v.readyState < 2) return setState('bad', '这一帧还没解码出来，等半秒再点');
+    cx.drawImage(v, 0, 0, w, h);
+    const img = document.createElement('img');
+    img.src = cv.toDataURL('image/png');
+    img.title = '点一下看大图'; img.style.cursor = 'zoom-in';
+    img.onclick = () => {
+      const ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+      const big = document.createElement('img'); big.src = img.src;
+      big.style.cssText = 'max-width:96vw;max-height:96vh;border-radius:8px';
+      ov.appendChild(big); ov.onclick = () => ov.remove();
+      document.body.appendChild(ov);
+    };
+    gridEl.appendChild(img);
+    setState('', `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')} · ${w}×${h} PNG · 只在内存里`);
+  }
+
   root.addEventListener('click', async (e) => {
     const a = e.target.dataset.a;
     if (a === 'close') { root.classList.toggle('on'); return; }
     if (a === 'grid') { root.classList.add('on'); await shootGrid(); return; }
+    if (a === 'one') { root.classList.add('on'); await shootOne(); return; }
     if (a === 'copy') {
       if (!cues.length) return setState('', '还没抓');
       try { await navigator.clipboard.writeText(cues.map(c => c.text).join('\n')); setState('ok', `已复制 ${cues.length} 句`); }
