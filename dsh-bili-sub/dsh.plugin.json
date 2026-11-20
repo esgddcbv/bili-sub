@@ -1,0 +1,11 @@
+{
+  "name": "dsh-bili-sub",
+  "description": "B 站字幕取值与验真：拉 AI 字幕、三条证据判真伪，错配的当场丢掉。",
+  "version": "0.1.0",
+  "entry": {
+    "name": "dsh-bili-sub",
+    "inject": [
+      "tools"
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "dsh-bili-sub",
+  "version": "0.1.0",
+  "description": "B 站字幕取值与验真：给定 BV 号，拉 AI 字幕、用标题/最长中文段/弹幕三条证据判它是不是这条视频的，错配的当场丢掉。 · Fetch and verify Bilibili subtitles before trusting them.",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek",
+    "bilibili",
+    "subtitle",
+    "transcript"
+  ],
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src",
+    "dsh.plugin.json",
+    "cordis.patch.yml",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/esgddcbv/bili-sub.git"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

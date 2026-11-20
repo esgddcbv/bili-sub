@@ -205,3 +205,18 @@ node bili-sub.mjs verify --dir "D:\知识库\99_原始字幕" --online       # �
 | 字数 | 正文长度 | ≥ 200 |
 
 `score = eff*100 + 拉丁*10 + 弹幕*30 + 主题词*2`。宁可漏，不要错配——细则见「已知漏判」。
+
+## 三、DSH 插件：`bili_sub` 工具
+
+`dsh-bili-sub/` 是一个 DeepSeek Harness bundle，把上面的 CLI 包成一个工具：
+
+```
+bili_sub({ cmd: "probe BV1z8hBzNEB7" })
+bili_sub({ cmd: "fetch BV1z8hBzNEB7 --out D:\\\\知识库\\\\99_原始字幕" })
+bili_sub({ cmd: "verify --dir D:\\\\知识库\\\\99_原始字幕 --online" })
+```
+
+本地安装：`plugin_manager install_bundle` 指到这个目录即可（`package.json` 里要声明
+`dsh.bundle.patch`）。参数只留一个字符串 `cmd`，是踩出来的：工具 schema 里
+`parameters` 要是 author 形态（属性名 → 值 schema），而 `output.schema` 必须是标准
+JSON Schema，两者混用会让整个会话 INVALID_REQUEST。

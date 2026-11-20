@@ -97,7 +97,8 @@
     const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
     const cx = cv.getContext('2d');
     const t = v.currentTime;
-    if (v.readyState < 2) return setState('bad', '这一帧还没解码出来，等半秒再点');
+    for (let i = 0; i < 15 && v.readyState < 2; i++) await new Promise(r => setTimeout(r, 100));
+    if (v.readyState < 2) return setState('bad', '这一帧还没解码出来，先点一下播放再暂停');
     cx.drawImage(v, 0, 0, w, h);
     const img = document.createElement('img');
     img.src = cv.toDataURL('image/png');
