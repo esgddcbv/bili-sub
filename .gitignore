@@ -1,0 +1,17 @@
+node_modules/
+*.log
+frames/
+_frames/
+_rejected/
+_recheck.csv
+*.meta.json
+.DS_Store
+
+# 临时抓取产物
+*.err
+cand*.tsv
+batch_*.txt
+batch_*.json
+collected_*.json
+b[0-9].json
+b[0-9].err

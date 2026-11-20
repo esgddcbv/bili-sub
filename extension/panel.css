@@ -1,0 +1,14 @@
+#bsl-panel{position:fixed;right:18px;bottom:88px;z-index:2147483000;width:380px;background:rgba(9,11,13,.94);
+ color:#eef1f4;font:13px/1.6 "Microsoft YaHei",system-ui,sans-serif;border:1px solid #2a3138;border-radius:10px;
+ box-shadow:0 10px 30px rgba(0,0,0,.5);display:none}
+#bsl-panel.on{display:block}
+#bsl-panel .h{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #2a3138;cursor:move;
+ font-size:12px;color:#9aa4ae;letter-spacing:.04em}
+#bsl-panel .dot{width:7px;height:7px;border-radius:50%;background:#4b5560}
+#bsl-panel .dot.ok{background:#76c6d8}#bsl-panel .dot.bad{background:#d87676}
+#bsl-panel .cue{padding:12px 14px;font-size:15px;line-height:1.75;min-height:62px;color:#f4f6f8}
+#bsl-panel .meta{padding:0 14px 8px;font-size:11px;color:#7f8a95;white-space:pre-wrap}
+#bsl-panel .bar{display:flex;gap:8px;padding:0 12px 12px}
+#bsl-panel button{flex:1;background:#1b2128;color:#dfe5ea;border:1px solid #333c45;border-radius:6px;padding:6px 0;
+ font-size:12px;cursor:pointer}
+#bsl-panel button:hover{background:#232b34}

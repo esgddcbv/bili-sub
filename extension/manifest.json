@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "bili-sub 实时字幕",
+  "version": "0.1.0",
+  "description": "在 B 站视频页实时显示当前字幕，并当场判定这份字幕是不是这个视频的。",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://api.bilibili.com/*",
+    "https://aisubtitle.hdslb.com/*",
+    "https://comment.bilibili.com/*",
+    "https://www.bilibili.com/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://www.bilibili.com/video/*", "https://www.bilibili.com/list/*"],
+      "js": ["judge.js", "content.js"],
+      "css": ["panel.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": { "default_title": "bili-sub：抓本集字幕" }
+}

@@ -2,6 +2,9 @@
 
 **B 站视频取字工具：先验真，再落盘；没字幕就抽帧。**
 
+> **状态（2026-11-20）**：CLI 的字幕拉取、验真、抽帧三条路都已在真页面上跑过；弹幕由本机 `/pull` 拉取（页面 fetch 被 CORS 挡）。**浏览器扩展（实时字幕，不落盘）在 `extension/` 里开发中，未发布、未在仓库中**——需要 `chrome://extensions` 加载已解压目录自测。仓库里凡是没验过的，README 都会写「未验」。
+
+
 给 AI agent（或任何要批量"看"B 站课程的人）用。它只解决两件具体的事：
 
 1. **AI 字幕经常不是这条视频的。** B 站 `/x/player/v2` 给的 `subtitle_url` 会漂——同一个 BV，早上回来是这门课，下午回来是别人的评测、别人的 vlog，甚至只有一句 `♪ 音乐 ♪`。这个工具不换接口，它**取到之后先验**，验不过就不落盘。
@@ -10,6 +13,31 @@
 > English: a tiny tool for Bilibili that fetches AI subtitles **and verifies they belong to the video**, plus a 3×3 frame-grid extractor for videos without usable subtitles.
 
 ![demo](demo.gif)
+
+---
+
+## 二、扩展：实时字幕，不落盘（开发中）
+
+字都下到硬盘、再读回来，一是慢，二是几千集课程会把盘塞满。扩展版把这件事做成「一边播一边看」：
+
+- 面板常驻视频页右下角，跟着 `timeupdate` 显示当前这一句；
+- 只有点「抓本集」时才向后台要字幕，字幕留在内存里，关掉页面就没了；
+- 后台用扩展的 `host_permissions` 直连 `api.bilibili.com` / `aisubtitle.hdslb.com`，**不经过页面、不受 CORS 限制、不需要本机 serve**；
+- 抓到当场跑同一套判据，面板上直接写「验真通过 / 不通过 + 为什么」；
+- 「复制全部」把整集字幕塞进剪贴板，要存盘由你决定。
+
+```
+extension/
+  manifest.json   MV3，权限只有 storage + 三个 bilibili 域
+  background.js   cid → player/v2 → 拉字幕 → 判真伪
+  content.js      面板、实时跟读、拖动、复制
+  judge.js        判据（与 CLI 同源，Node 里也能 require）
+  panel.css
+```
+
+安装：`chrome://extensions` → 开发者模式 → 加载已解压的扩展程序 → 选 `extension/`。
+
+**未验**：扩展尚未在真实浏览器里加载过（写这段时浏览器桥只支持页面内脚本，进不了 `chrome://extensions`）；`judge.js` 已用真字幕与漂移字幕在 Node 里对过——真字幕 `ok:true, 289 字/分, 命中 0.50`，漂移的那份 `FAIL：语速 4 字/分…`。
 
 ---
 
