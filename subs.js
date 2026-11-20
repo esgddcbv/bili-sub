@@ -27,6 +27,8 @@ async function grabSubs(bvids, {
     });
     return await r.json().catch(() => ({ ok: false, error: '响应不是 JSON' }));
   };
+  const pullUrl = endpoint.replace(/\/text$/, '/pull');
+  const postTo = (u, payload) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) }).then(r => r.json()).catch(e => ({ ok: false, error: String(e) }));
 
   const getJson = async (u) => {
     const r = await fetch(u, { credentials: 'include' });
@@ -55,15 +57,10 @@ async function grabSubs(bvids, {
       for (const s of subs) {
         if (!s.subtitle_url) { out.push({ bvid: bv, page: pg.page, lan: s.lan, ok: false, why: 'subtitle_url 是空的' }); continue; }
         try {
-          const u = s.subtitle_url.startsWith('//') ? 'https:' + s.subtitle_url : s.subtitle_url;
-          const r = await fetch(u, { credentials: 'include' });
-          const j = await r.json();
-          const text = (j.body || []).map(x => x.content).join('');
-          if (text.length < minChars) { out.push({ bvid: bv, page: pg.page, lan: s.lan, chars: text.length, ok: false, why: '太短' }); continue; }
-          const saved = await post({ kind: 'sub', bvid: bv, title: title || bv, part: pg.part, secs: pg.duration, lan: s.lan, text });
-          out.push({ bvid: bv, page: pg.page, lan: s.lan, chars: text.length, ok: !!saved.ok, file: saved.file, why: saved.error });
+          const saved = await postTo(pullUrl, { kind: 'sub', bvid: bv, title: title || bv, part: pg.part, secs: pg.duration, lan: s.lan, url: s.subtitle_url });
+          out.push({ bvid: bv, page: pg.page, lan: s.lan, chars: saved.chars, ok: !!saved.ok, why: saved.ok ? undefined : saved.error });
         } catch (e) {
-          out.push({ bvid: bv, page: pg.page, lan: s.lan, ok: false, why: '取字幕失败：' + e.message });
+          out.push({ bvid: bv, page: pg.page, lan: s.lan, ok: false, why: '递 URL 失败：' + e.message });
         }
       }
       if (withDanmaku) {

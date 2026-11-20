@@ -156,8 +156,12 @@ await grabGrid({ times: [665, 1985, ...], cols: 3, rows: 3 });        // 没字�
 node bili-sub.mjs verify --dir "D:\知识库\99_原始字幕" --online       # ③ 判真伪，出复核表
 ```
 
-要点：字幕文本由**页面**直接 POST 回本机（`POST /text`），不再把 `auth_key` 抄出来用——
-那条 URL 二十分钟就凉，这也是之前「早上真、下午变校招」的原因之一。
+要点：页面只把 `subtitle_url` 递回本机（`POST /pull`），**下载由本机 Node 做**。
+这不是偏好，是试出来的：页面里 `fetch(aisubtitle.hdslb.com)` 会被 CORS 挡（`Failed to fetch`），
+而本机下载不需要 cookie——`auth_key` 本身即授权。分开做之后，那条 URL 二十分钟的寿命也不再被人工搬运耽误。
+
+实测（2026-11-20）：同一门千屹编剧课，页面这次给出的 AI 字幕正文是「珍妮·古道尔」纪录片——
+判据给 `hit 0.08 / seg 0.11 / rpm 4`，直接 FAIL。工具的价值不在抓到字幕，而在**敢把它扔掉**。
 
 ## 判据（v2 起）
 

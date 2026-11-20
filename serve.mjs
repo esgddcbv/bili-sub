@@ -72,6 +72,38 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // 页面只把 URL 递过来，真正下载在这边做：aisubtitle 那个域没有 CORS，
+  // 页面里 fetch 会 "Failed to fetch"，但 auth_key 在 URL 里就够用，不需要 cookie。
+  if (req.method === 'POST' && req.url === '/pull') {
+    let body = '';
+    req.setEncoding('utf8');
+    req.on('data', d => { body += d; });
+    req.on('end', async () => {
+      try {
+        const { kind = 'sub', bvid = '', title = '', part = '', secs = 0, lan = 'ai-zh', url = '' } = JSON.parse(body);
+        if (!url) return json(res, 400, { error: 'url 为空' });
+        const target = url.startsWith('//') ? 'https:' + url : url;
+        const r = await fetch(target, { headers: { 'Referer': 'https://www.bilibili.com/', 'User-Agent': 'Mozilla/5.0' } });
+        if (!r.ok) return json(res, 502, { error: '下载失败 HTTP ' + r.status });
+        const j = await r.json();
+        const text = (j.body || []).map(x => x.content).join('');
+        if (text.length < 20) return json(res, 400, { error: '字幕是空的', chars: text.length });
+        const safe = String(title || bvid).replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 60);
+        const base = kind === 'danmaku' ? `${safe}_弹幕` : safe;
+        fs.writeFileSync(path.join(OUT, `${base}.txt`), text, 'utf8');
+        fs.writeFileSync(path.join(OUT, `${base}.meta.json`), JSON.stringify({
+          bvid, title, page: 1, part, secs: Number(secs) || 0, lan, chars: text.length,
+          source: 'pulled', savedAt: new Date().toISOString(),
+        }, null, 2), 'utf8');
+        console.log(`[pulled] ${base}.txt (${text.length} 字)`);
+        json(res, 200, { ok: true, chars: text.length, head: text.slice(0, 30) });
+      } catch (e) {
+        json(res, 500, { error: e.message });
+      }
+    });
+    return;
+  }
+
   if (req.method === 'POST' && req.url === '/text') {
     let body = '';
     req.setEncoding('utf8');
