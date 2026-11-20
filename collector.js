@@ -38,3 +38,6 @@ async function collectSubs(bv, opts = {}) {
   }
   return out;
 }
+
+/* 挂到 window：间接 eval / strict 上下文里定义不会外泄 */
+if (typeof window !== "undefined") window.collectSubs = collectSubs;

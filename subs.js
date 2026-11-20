@@ -40,7 +40,15 @@ async function grabSubs(bvids, {
   const out = [];
   for (const bv of bvids) {
     let title = null;
-    try { title = document.title.replace(/_哔哩哔哩_bilibili\\s*$/, ''); } catch {}
+    try {
+      // 抓的是目标视频自己的标题：不能用 document.title（当前页可能是别的视频）
+      const v = await getJson(`https://api.bilibili.com/x/web-interface/view?bvid=${bv}`);
+      if (v.code === 0 && v.data && v.data.title) title = v.data.title;
+    } catch {}
+    if (!title && location.href.includes(bv)) {
+      try { title = document.title.replace(/_哔哩哔哩_bilibili\s*$/, ''); } catch {}
+    }
+    if (!title) title = bv;
     const pl = await getJson(`https://api.bilibili.com/x/player/pagelist?bvid=${bv}`);
     if (pl.code !== 0) { out.push({ bvid: bv, ok: false, why: 'pagelist 失败：' + pl.message }); continue; }
     const pages = all ? pl.data : pl.data.slice(0, 1);
@@ -82,3 +90,6 @@ async function grabSubs(bvids, {
   }
   return out;
 }
+
+/* 挂到 window：间接 eval / strict 上下文里定义不会外泄 */
+if (typeof window !== "undefined") window.grabSubs = grabSubs;

@@ -220,3 +220,10 @@ bili_sub({ cmd: "verify --dir D:\\\\知识库\\\\99_原始字幕 --online" })
 `dsh.bundle.patch`）。参数只留一个字符串 `cmd`，是踩出来的：工具 schema 里
 `parameters` 要是 author 形态（属性名 → 值 schema），而 `output.schema` 必须是标准
 JSON Schema，两者混用会让整个会话 INVALID_REQUEST。
+
+## 已知坑（2026-11-20 实修）
+
+1. **页面脚本必须挂 `window`**：`subs.js` / `grid.js` / `collector.js` 末尾都有 `if (typeof window !== "undefined") window.grabXxx = grabXxx;`。自动化里 `eval(await fetch(...))` 跑在 strict 上下文时，函数声明不会外泄，会报 `grabSubs is not defined`。
+2. **标题要取目标视频自己的**：`grabSubs` 早先用 `document.title`，抓的不是当前打开的 BV 时会把文件名写成别的视频、验真必然 FAIL。现在走 `/x/web-interface/view?bvid=`，取不到才退回 `document.title`（且仅当当前页就是这个 BV）。
+3. **`_哔哩哔哩_bilibili` 后缀**：正则曾写成 `\\s*$`（双反斜杠），永远删不掉后缀，命中率被稀释；已改为 `\s*$`。
+4. **`subtitle_url 是空的`** 是服务端那一刻没给字幕（接口会漂），不是代码错误；换时间重试或换视频即可。

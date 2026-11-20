@@ -71,3 +71,6 @@ async function grabGrid({
     return { error: 'POST 失败（serve.mjs 没开？）：' + e.message, bytes: dataUrl.length };
   }
 }
+
+/* 挂到 window：间接 eval / strict 上下文里定义不会外泄 */
+if (typeof window !== "undefined") window.grabGrid = grabGrid;
