@@ -1,0 +1,23 @@
+{
+  "name": "bili-sub",
+  "version": "2.0.0",
+  "description": "B站 AI 字幕取件与验真 + 视频帧网格抽帧：给 AI agent 用的「看视频」工具",
+  "type": "module",
+  "bin": {
+    "bili-sub": "./bili-sub.mjs",
+    "bili-frame": "./serve.mjs"
+  },
+  "files": [
+    "bili-sub.mjs",
+    "serve.mjs",
+    "grid.js",
+    "collector.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["bilibili", "subtitle", "ai-agent", "transcript", "frame-grid", "video"],
+  "license": "MIT"
+}
