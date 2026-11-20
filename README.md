@@ -9,7 +9,7 @@
 
 > English: a tiny tool for Bilibili that fetches AI subtitles **and verifies they belong to the video**, plus a 3×3 frame-grid extractor for videos without usable subtitles.
 
-![demo](docs/demo.gif)
+![demo](demo.gif)
 
 ---
 
