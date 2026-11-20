@@ -35,7 +35,7 @@
 
   async function shootGrid() {
     const v = video();
-    if (!v || !v.duration) return setState('bad', '还没加载出时长');
+    if (!v || !isFinite(v.duration) || v.duration <= 0) return setState('bad', '还没加载出时长');
     gridEl.innerHTML = ''; cueEl.style.display = 'none';
     setState('', '抽帧中…（会静音跳着 seek 九次）');
     const W = 320, H = 180, dur = v.duration;
@@ -118,8 +118,16 @@
   root.addEventListener('click', async (e) => {
     const a = e.target.dataset.a;
     if (a === 'close') { root.classList.toggle('on'); return; }
-    if (a === 'grid') { root.classList.add('on'); await shootGrid(); return; }
-    if (a === 'one') { root.classList.add('on'); await shootOne(); return; }
+    if (a === 'grid') {
+      root.classList.add('on');
+      try { await shootGrid(); } catch (e) { cueEl.style.display = ''; gridEl.innerHTML = ''; setState('bad', '抽帧出错：' + ((e && e.message) || e)); }
+      return;
+    }
+    if (a === 'one') {
+      root.classList.add('on');
+      try { await shootOne(); } catch (e) { cueEl.style.display = ''; gridEl.innerHTML = ''; setState('bad', '取帧出错：' + ((e && e.message) || e)); }
+      return;
+    }
     if (a === 'copy') {
       if (!cues.length) return setState('', '还没抓');
       try { await navigator.clipboard.writeText(cues.map(c => c.text).join('\n')); setState('ok', `已复制 ${cues.length} 句`); }

@@ -227,3 +227,5 @@ JSON Schema，两者混用会让整个会话 INVALID_REQUEST。
 2. **标题要取目标视频自己的**：`grabSubs` 早先用 `document.title`，抓的不是当前打开的 BV 时会把文件名写成别的视频、验真必然 FAIL。现在走 `/x/web-interface/view?bvid=`，取不到才退回 `document.title`（且仅当当前页就是这个 BV）。
 3. **`_哔哩哔哩_bilibili` 后缀**：正则曾写成 `\\s*$`（双反斜杠），永远删不掉后缀，命中率被稀释；已改为 `\s*$`。
 4. **`subtitle_url 是空的`** 是服务端那一刻没给字幕（接口会漂），不是代码错误；换时间重试或换视频即可。
+5. **`minChars` 真生效**：早先只声明没判，漂成几百字的过场也照样落盘；现在 `chars < minChars` 记为 `ok:false` 并给理由（文件仍会落盘，交给 `verify` 复核时会被判 FAIL）。
+6. **抽帧要有兜底**：`duration` 不是有限数、或 `drawImage`/seek 抛错时，面板现在会写清「还没加载出时长」或「抽帧出错：…」，不再无声卡在「抽帧中…」。

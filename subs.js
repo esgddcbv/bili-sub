@@ -75,7 +75,8 @@ async function grabSubs(bvids, {
               saved.retried = true;
             }
           }
-          out.push({ bvid: bv, page: pg.page, lan: s.lan, chars: saved.chars, ok: !!saved.ok, retried: saved.retried, why: saved.ok ? undefined : saved.error });
+          const tooShort = saved.ok && typeof saved.chars === 'number' && saved.chars < minChars;
+          out.push({ bvid: bv, page: pg.page, lan: s.lan, chars: saved.chars, ok: !!saved.ok && !tooShort, retried: saved.retried, why: tooShort ? `只有 ${saved.chars} 字，少于 minChars=${minChars}（多半是漂了或只是过场几句）` : (saved.ok ? undefined : saved.error) });
         } catch (e) {
           out.push({ bvid: bv, page: pg.page, lan: s.lan, ok: false, why: '递 URL 失败：' + e.message });
         }
