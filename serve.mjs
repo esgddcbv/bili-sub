@@ -19,6 +19,8 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
+import { fileURLToPath } from 'node:url';
 
 const argv = process.argv.slice(2);
 const opt = {};
@@ -84,9 +86,26 @@ const server = http.createServer((req, res) => {
         if (!url) return json(res, 400, { error: 'url 为空' });
         const target = url.startsWith('//') ? 'https:' + url : url;
         const r = await fetch(target, { headers: { 'Referer': 'https://www.bilibili.com/', 'User-Agent': 'Mozilla/5.0' } });
-        if (!r.ok) return json(res, 502, { error: '下载失败 HTTP ' + r.status });
-        const j = await r.json();
-        const text = (j.body || []).map(x => x.content).join('');
+        if (!r.ok) return json(res, 502, { error: '下载失败 HTTP ' + r.status, retryable: r.status === 403 });
+        let text;
+        if (kind === 'danmaku') {
+          // fetch 会自动解开 Content-Encoding（gzip/br），所以拿到的可能已经是 XML；
+          // 原样是 deflate 原始流时才需要解压。两种都试，别只赌一种。
+          const buf = Buffer.from(await r.arrayBuffer());
+          let xml = null;
+          if (buf.subarray(0, 64).toString('utf8').trimStart().startsWith('<')) {
+            xml = buf.toString('utf8');
+          } else {
+            for (const fn of [zlib.inflateRawSync, zlib.inflateSync, zlib.brotliDecompressSync]) {
+              try { xml = fn(buf).toString('utf8'); break; } catch {}
+            }
+          }
+          if (!xml) throw new Error('弹幕解压失败（既不是明文 XML，也解不开 deflate/br）');
+          text = [...xml.matchAll(/<d p="[^"]*">([\s\S]*?)<\/d>/g)].map(m => m[1]).join(' ');
+        } else {
+          const j = await r.json();
+          text = (j.body || []).map(x => x.content).join('');
+        }
         if (text.length < 20) return json(res, 400, { error: '字幕是空的', chars: text.length });
         const safe = String(title || bvid).replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 60);
         const base = kind === 'danmaku' ? `${safe}_弹幕` : safe;
@@ -102,6 +121,19 @@ const server = http.createServer((req, res) => {
       }
     });
     return;
+  }
+
+  // 页面脚本静态提供：省掉「把 4KB JS 复制粘贴进控制台」这一步。
+  // 只放行这三个文件，别的路径一律 404。
+  if (req.method === 'GET' && req.url.startsWith('/js/')) {
+    const name = req.url.slice(4).split('?')[0];
+    const allowed = new Set(['grid.js', 'subs.js', 'collector.js']);
+    if (!allowed.has(name)) return json(res, 404, { error: 'not found' });
+    const file = path.join(path.dirname(fileURLToPath(import.meta.url)), name);
+    if (!fs.existsSync(file)) return json(res, 404, { error: name + ' 不在接收端同目录' });
+    const src = fs.readFileSync(file, 'utf8');
+    res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
+    return res.end(src);
   }
 
   if (req.method === 'POST' && req.url === '/text') {
@@ -130,6 +162,17 @@ const server = http.createServer((req, res) => {
   }
 
   json(res, 404, { error: 'not found' });
+});
+
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') {
+    console.error(`端口 ${PORT} 已被占用 —— 多半是上一个 serve.mjs 还活着。\n` +
+      `  Windows: netstat -ano | findstr :${PORT}   然后 taskkill /F /PID <pid>\n` +
+      `  或者换端口: node serve.mjs --port ${PORT + 1} --out <目录>（页面那边 endpoint 也要跟着改）`);
+    process.exit(2);
+  }
+  console.error('serve 出错：', e.message);
+  process.exit(1);
 });
 
 server.listen(PORT, '127.0.0.1', () => {

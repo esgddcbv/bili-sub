@@ -57,27 +57,26 @@ async function grabSubs(bvids, {
       for (const s of subs) {
         if (!s.subtitle_url) { out.push({ bvid: bv, page: pg.page, lan: s.lan, ok: false, why: 'subtitle_url 是空的' }); continue; }
         try {
-          const saved = await postTo(pullUrl, { kind: 'sub', bvid: bv, title: title || bv, part: pg.part, secs: pg.duration, lan: s.lan, url: s.subtitle_url });
-          out.push({ bvid: bv, page: pg.page, lan: s.lan, chars: saved.chars, ok: !!saved.ok, why: saved.ok ? undefined : saved.error });
+          let saved = await postTo(pullUrl, { kind: 'sub', bvid: bv, title: title || bv, part: pg.part, secs: pg.duration, lan: s.lan, url: s.subtitle_url });
+          if (!saved.ok && saved.retryable) {
+            // auth_key 凉了：回页面重新要一次 URL（登录态还在），再拉
+            const fresh = await getJson(`https://api.bilibili.com/x/player/v2?bvid=${bv}&cid=${pg.cid}`);
+            const again = ((fresh.data.subtitle && fresh.data.subtitle.subtitles) || []).find(x => x.lan === s.lan);
+            if (again && again.subtitle_url) {
+              saved = await postTo(pullUrl, { kind: 'sub', bvid: bv, title: title || bv, part: pg.part, secs: pg.duration, lan: s.lan, url: again.subtitle_url });
+              saved.retried = true;
+            }
+          }
+          out.push({ bvid: bv, page: pg.page, lan: s.lan, chars: saved.chars, ok: !!saved.ok, retried: saved.retried, why: saved.ok ? undefined : saved.error });
         } catch (e) {
           out.push({ bvid: bv, page: pg.page, lan: s.lan, ok: false, why: '递 URL 失败：' + e.message });
         }
       }
       if (withDanmaku) {
-        try {
-          const r = await fetch(`https://comment.bilibili.com/${pg.cid}.xml`);
-          const buf = new Uint8Array(await r.arrayBuffer());
-          // 弹幕是 raw deflate，页面里用 DecompressionStream('deflate-raw') 解
-          let xml = '';
-          try {
-            const ds = new DecompressionStream('deflate-raw');
-            xml = await new Response(new Blob([buf]).stream().pipeThrough(ds)).text();
-          } catch { xml = new TextDecoder().decode(buf); }
-          const dm = [...xml.matchAll(/<d p="[^"]*">([\s\S]*?)<\/d>/g)].map(m => m[1]).join(' ');
-          if (dm.length > 50) await post({ kind: 'danmaku', bvid: bv, title: (title || bv) + '_弹幕', part: pg.part, secs: pg.duration, text: dm });
-        } catch (e) {
-          out.push({ bvid: bv, page: pg.page, ok: false, why: '弹幕失败：' + e.message });
-        }
+        // 弹幕同样跨域，页面只递 cid；解压与落盘都在服务端
+        const dmUrl = `https://comment.bilibili.com/${pg.cid}.xml`;
+        const saved = await postTo(pullUrl, { kind: 'danmaku', bvid: bv, title: (title || bv) + '_弹幕', part: pg.part, secs: pg.duration, url: dmUrl });
+        out.push({ bvid: bv, page: pg.page, kind: 'danmaku', chars: saved.chars, ok: !!saved.ok, why: saved.ok ? undefined : saved.error });
       }
     }
   }
