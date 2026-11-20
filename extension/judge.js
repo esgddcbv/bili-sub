@@ -34,8 +34,9 @@
     const reasons = [];
     if (chars < 200) reasons.push(`正文只 ${chars} 字（<200），太短不认`);
     if (rpm && (rpm < 60 || rpm > 600)) reasons.push(`语速 ${rpm} 字/分 不在 60–600（像音乐、静音或别的视频）`);
-    if (eff < 0.22) reasons.push(`标题命中 ${eff.toFixed(2)} < 0.22（整句 ${hit.toFixed(2)} / 最长段 ${segHit.toFixed(2)}）`);
-    if (dm && dm < 0.30) reasons.push(`弹幕命中 ${dm.toFixed(2)} < 0.30`);
+    // 弹幕只加分、不否决：弹幕常常在聊别的事，拿它当否决条件会误杀真字幕
+    const dmOk = dm >= 0.30;
+    if (eff < 0.22 && !dmOk) reasons.push(`标题命中 ${eff.toFixed(2)} < 0.22（整句 ${hit.toFixed(2)} / 最长段 ${segHit.toFixed(2)}），弹幕 ${dm.toFixed(2)} < 0.30`);
     const ok = reasons.length === 0;
     return { ok, chars, rpm, hit: +hit.toFixed(3), seg: +segHit.toFixed(3), dm: +dm.toFixed(3), eff: +eff.toFixed(3), why: reasons.join('；'), title, part };
   }
